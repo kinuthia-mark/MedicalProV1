@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.6.3-stable
+
+jobs:
+  gdscript:
+    name: GDScript lint and Godot import check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: gdlint and gdformat
+        run: |
+          pip install "gdtoolkit==4.*"
+          gdlint medical-pro/
+          gdformat --check medical-pro/
+
+      - name: Download Godot (headless)
+        run: |
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+
+      # Importing the project parses every script and scene. Godot keeps going
+      # after a script error, so the log is checked for errors as well.
+      - name: Import project
+        run: |
+          ./godot --headless --path medical-pro --import 2>&1 | tee import.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|ERROR:" import.log; then
+            echo "::error::Godot reported errors while importing the project"
+            exit 1
+          fi

@@ -68,4 +68,3 @@ editable = false
 
 [node name="HTTPRequest" type="HTTPRequest" parent="." unique_id=908641409]
 
-[connection signal="pressed" from="VBoxContainer/GenerateButton" to="." method="_on_generate_button_pressed"]

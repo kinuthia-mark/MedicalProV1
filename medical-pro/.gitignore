@@ -16,3 +16,6 @@ mono_crash.*.json
 *.tmp
 .DS_Store
 *.log
+# Local API key file, never commit it
+gemini_api_key.txt
+.env
