@@ -1,70 +1,263 @@
-[gd_scene format=3 uid="uid://dkfcaksttyq7q"]
+[gd_scene load_steps=8 format=3 uid="uid://dkfcaksttyq7q"]
 
 [ext_resource type="Script" uid="uid://dvhejjcjp1val" path="res://medical_pro.gd" id="1_5kq6d"]
 
-[sub_resource type="Theme" id="Theme_xpj3s"]
+[sub_resource type="StyleBoxFlat" id="Panel_card"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.86, 0.89, 0.93, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
 
-[node name="Control" type="Control" unique_id=1584019426]
+[sub_resource type="StyleBoxFlat" id="Edit_normal"]
+bg_color = Color(0.97, 0.98, 0.99, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.82, 0.85, 0.9, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="Button_primary"]
+bg_color = Color(0.051, 0.443, 0.659, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 18.0
+content_margin_top = 9.0
+content_margin_right = 18.0
+content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="Button_primary_hover"]
+bg_color = Color(0.035, 0.36, 0.55, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 18.0
+content_margin_top = 9.0
+content_margin_right = 18.0
+content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="Button_plain"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.82, 0.88, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+
+[sub_resource type="Theme" id="App_theme"]
+default_font_size = 15
+Button/colors/font_color = Color(0.13, 0.17, 0.24, 1)
+Button/colors/font_hover_color = Color(0.051, 0.443, 0.659, 1)
+Button/colors/font_disabled_color = Color(0.6, 0.63, 0.68, 1)
+Button/styles/normal = SubResource("Button_plain")
+Button/styles/hover = SubResource("Button_plain")
+Button/styles/pressed = SubResource("Button_plain")
+Button/styles/disabled = SubResource("Button_plain")
+Label/colors/font_color = Color(0.13, 0.17, 0.24, 1)
+PanelContainer/styles/panel = SubResource("Panel_card")
+TextEdit/colors/font_color = Color(0.1, 0.12, 0.17, 1)
+TextEdit/colors/font_readonly_color = Color(0.1, 0.12, 0.17, 1)
+TextEdit/colors/font_placeholder_color = Color(0.55, 0.59, 0.66, 1)
+TextEdit/colors/caret_color = Color(0.051, 0.443, 0.659, 1)
+TextEdit/colors/selection_color = Color(0.051, 0.443, 0.659, 0.25)
+TextEdit/styles/normal = SubResource("Edit_normal")
+TextEdit/styles/focus = SubResource("Edit_normal")
+TextEdit/styles/read_only = SubResource("Edit_normal")
+
+[node name="Control" type="Control"]
 layout_mode = 3
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.85300004
-offset_left = 3.0
-offset_top = 110.0
-offset_bottom = 144.25598
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_xpj3s")
+theme = SubResource("App_theme")
 script = ExtResource("1_5kq6d")
 
-[node name="ColorRect" type="ColorRect" parent="." unique_id=370820582]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0.945, 0.957, 0.973, 1)
 
-[node name="MarginContainer" type="MarginContainer" parent="." unique_id=219700414]
+[node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1201828846]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -59.0
-offset_bottom = 59.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Label" type="Label" parent="VBoxContainer" unique_id=144254149]
+[node name="Layout" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-text = "Medical Pro: Clinical Scribe"
+theme_override_constants/separation = 16
 
-[node name="TranscriptInput" type="TextEdit" parent="VBoxContainer" unique_id=1186380001]
-custom_minimum_size = Vector2(0, 300)
+[node name="Header" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
-theme_override_colors/caret_background_color = Color(1, 1, 1, 1)
-theme_override_colors/font_color = Color(0.014275181, 0.014275239, 0.0142751895, 1)
-theme_override_colors/background_color = Color(1, 1, 1, 0)
-placeholder_text = "Type here..."
+theme_override_constants/separation = 12
 
-[node name="GenerateButton" type="Button" parent="VBoxContainer" unique_id=1947390686]
+[node name="Titles" type="VBoxContainer" parent="Margin/Layout/Header"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="Margin/Layout/Header/Titles"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.051, 0.443, 0.659, 1)
+theme_override_font_sizes/font_size = 26
+text = "Medical-Pro"
+
+[node name="Subtitle" type="Label" parent="Margin/Layout/Header/Titles"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.45, 0.52, 1)
+text = "Clinical scribe: consultation transcript to SOAP note"
+
+[node name="StatusLabel" type="Label" parent="Margin/Layout/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_colors/font_color = Color(0.4, 0.45, 0.52, 1)
+text = "Ready"
+horizontal_alignment = 2
+
+[node name="Panels" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="InputCard" type="PanelContainer" parent="Margin/Layout/Panels"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Column" type="VBoxContainer" parent="Margin/Layout/Panels/InputCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Heading" type="Label" parent="Margin/Layout/Panels/InputCard/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Transcript"
+
+[node name="TranscriptInput" type="TextEdit" parent="Margin/Layout/Panels/InputCard/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Paste the doctor-patient conversation here, or press \"Load example\"."
+wrap_mode = 1
+
+[node name="Actions" type="HBoxContainer" parent="Margin/Layout/Panels/InputCard/Column"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ExampleButton" type="Button" parent="Margin/Layout/Panels/InputCard/Column/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Load example"
+
+[node name="ClearButton" type="Button" parent="Margin/Layout/Panels/InputCard/Column/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Clear"
+
+[node name="Spacer" type="Control" parent="Margin/Layout/Panels/InputCard/Column/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GenerateButton" type="Button" parent="Margin/Layout/Panels/InputCard/Column/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_styles/normal = SubResource("Button_primary")
+theme_override_styles/hover = SubResource("Button_primary_hover")
+theme_override_styles/pressed = SubResource("Button_primary_hover")
 text = "Generate SOAP Note"
 
-[node name="OutputDisplay" type="TextEdit" parent="VBoxContainer" unique_id=1749490791]
-custom_minimum_size = Vector2(0, 400)
+[node name="OutputCard" type="PanelContainer" parent="Margin/Layout/Panels"]
 layout_mode = 2
-theme_override_colors/caret_color = Color(0.8745098, 0.8745098, 0.8745098, 1)
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/background_color = Color(1, 1, 1, 0)
+size_flags_horizontal = 3
+
+[node name="Column" type="VBoxContainer" parent="Margin/Layout/Panels/OutputCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Heading" type="Label" parent="Margin/Layout/Panels/OutputCard/Column"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "SOAP note"
+
+[node name="OutputDisplay" type="TextEdit" parent="Margin/Layout/Panels/OutputCard/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
 editable = false
+wrap_mode = 1
 
-[node name="HTTPRequest" type="HTTPRequest" parent="." unique_id=908641409]
+[node name="Actions" type="HBoxContainer" parent="Margin/Layout/Panels/OutputCard/Column"]
+layout_mode = 2
+theme_override_constants/separation = 8
 
+[node name="Disclaimer" type="Label" parent="Margin/Layout/Panels/OutputCard/Column/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.55, 0.59, 0.66, 1)
+theme_override_font_sizes/font_size = 13
+text = "AI draft. A clinician must review it."
+
+[node name="CopyButton" type="Button" parent="Margin/Layout/Panels/OutputCard/Column/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Copy"
+
+[node name="SaveButton" type="Button" parent="Margin/Layout/Panels/OutputCard/Column/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Save..."
+
+[node name="HTTPRequest" type="HTTPRequest" parent="."]
+unique_name_in_owner = true
+
+[node name="SaveDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Save SOAP note"
+size = Vector2i(720, 480)
+access = 2
+filters = PackedStringArray("*.txt ; Text file", "*.md ; Markdown")

@@ -41,3 +41,21 @@ jobs:
             echo "::error::Godot reported errors while importing the project"
             exit 1
           fi
+
+      - name: Unit tests (headless)
+        run: ./godot --headless --path medical-pro --script res://tests/run_tests.gd
+
+      # A real renderer is needed for a screenshot, so run under a virtual
+      # display with Mesa's software OpenGL.
+      - name: Render a screenshot of the app
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
+          xvfb-run -s "-screen 0 1280x760x24" ./godot --path medical-pro --rendering-driver opengl3 \
+            --resolution 1280x760 --script res://tools/capture.gd -- "$PWD/app.png"
+          test -s app.png
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshot
+          path: app.png
