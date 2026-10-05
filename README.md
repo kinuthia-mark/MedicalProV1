@@ -8,7 +8,11 @@
 
 A small desktop app that turns a doctor-patient conversation transcript into a structured SOAP note, built with Godot 4 and Google's Gemini API.
 
-Paste a transcript, press one button, and get back a note split into Subjective, Objective, Assessment and Plan, ready to copy into an EHR.
+Paste a transcript, press one button, and get back a note split into Subjective, Objective, Assessment and Plan, ready to copy into an EHR or save as a file.
+
+![Medical-Pro with an example transcript and the generated SOAP note](docs/screenshots/app.png)
+
+*The screenshot is rendered automatically in CI by `tools/capture.gd`, so it always matches the current UI.*
 
 ---
 
@@ -64,7 +68,20 @@ If no key is found, the app shows the exact path it looked in and disables the G
 
 ### 4. Run it
 
-Open the `medical-pro/` folder in Godot 4.6 or newer and press **Run** (F5). Paste a transcript and click **Generate SOAP Note**.
+Open the `medical-pro/` folder in Godot 4.6 or newer and press **Run** (F5). Paste a transcript (or press **Load example**) and click **Generate SOAP Note**.
+
+### Using the app
+
+| Control | What it does |
+|---|---|
+| **Load example** | Fills in a short sample consultation so you can try the app straight away |
+| **Clear** | Empties both boxes |
+| **Generate SOAP Note** | Sends the transcript to Gemini. The button is disabled until the answer arrives, so a note cannot be requested twice |
+| **Copy** | Puts the note on the clipboard, ready to paste into an EHR |
+| **Save...** | Saves the note as a `.txt` or `.md` file |
+| Status (top right) | Ready, Generating..., Note ready, Copied, Saved, or what went wrong |
+
+Copy and Save stay disabled until there is a real note, so an error message can never be saved as if it were a note.
 
 ---
 
@@ -207,9 +224,13 @@ PLAN:
 MedicalProV1/
 ├── medical-pro/                 # The Godot project (open this folder in Godot)
 │   ├── project.godot            # Project settings, main scene
-│   ├── medical_pro.gd           # All app logic: key loading, request, response parsing
-│   ├── src/control.tscn         # The UI: transcript box, button, output box
+│   ├── medical_pro.gd           # UI wiring: buttons, status, copy and save
+│   ├── soap_logic.gd            # Testable logic: key loading, request, parsing, error messages
+│   ├── src/control.tscn         # The UI: two panels, theme, buttons, save dialog
+│   ├── tests/run_tests.gd       # 30 headless unit tests for soap_logic.gd
+│   ├── tools/capture.gd         # Renders the README screenshot
 │   └── icon.svg
+├── docs/screenshots/app.png     # Screenshot rendered by CI
 ├── .github/workflows/ci.yml     # Lint plus a headless Godot import on every push
 ├── LICENSE
 └── README.md
@@ -219,7 +240,7 @@ MedicalProV1/
 
 ## Settings
 
-The values at the top of `medical_pro.gd` can be changed:
+The values at the top of `soap_logic.gd` can be changed:
 
 | Constant | Default | What it does |
 |---|---|---|
@@ -251,6 +272,18 @@ GitHub Actions runs on every push and pull request:
 
 - `gdlint` and `gdformat --check` from [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit)
 - a headless Godot 4.6 import of the project, which fails if any script or scene has an error
+- **30 unit tests** (`tests/run_tests.gd`) for request building, response parsing, error messages, API key loading and save paths. They check, for example, that the key is sent in a header and never appears in the URL, and that a malformed or empty Gemini response returns an empty note instead of crashing
+- a screenshot render: the app is started under a virtual display with software OpenGL, filled with the example, and saved as a PNG artifact
+
+To run the unit tests locally:
+
+```bash
+godot --headless --path medical-pro --script res://tests/run_tests.gd
+```
+
+### Why the logic is split out
+
+`medical_pro.gd` only connects buttons to actions. Everything that can go wrong with the API (building the request, reading the response, turning error codes into messages) lives in `soap_logic.gd` as static functions with no UI and no network calls, so it can be tested in milliseconds without a window or an API key.
 
 To run the lint locally:
 
@@ -273,7 +306,6 @@ gdformat --check medical-pro/
 
 ## Ideas for next steps
 
-- Copy-to-clipboard and save-to-file buttons
 - Record audio and transcribe it inside the app
 - Editable prompt templates for different specialties
 - Export builds for Windows, macOS and Linux
@@ -286,7 +318,7 @@ gdformat --check medical-pro/
 - **Language:** GDScript
 - **AI:** Google Gemini API (Flash-Lite model)
 - **HTTP:** Godot's built-in HTTPRequest node
-- **CI:** GitHub Actions, gdtoolkit, headless Godot
+- **CI:** GitHub Actions, gdtoolkit, headless Godot unit tests, xvfb screenshot render
 
 ---
 
