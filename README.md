@@ -120,7 +120,7 @@ graph TB
     subgraph GODOT["Godot 4.6 app"]
         UI["UI layer<br/>src/control.tscn"]
         LOGIC["UI wiring<br/>medical_pro.gd"]
-        SOAP["Request + parsing<br/>soap_logic.gd"]
+        CORE["Request + parsing<br/>soap_logic.gd"]
         HTTP["HTTPRequest<br/>node"]
     end
 
@@ -133,7 +133,7 @@ graph TB
     end
 
     UI -->|User input| LOGIC
-    LOGIC -->|asks for body, headers| SOAP
+    LOGIC -->|asks for body, headers| CORE
     LOGIC -->|Sends request| HTTP
     HTTP -->|POST JSON, key in header| API
     API -->|Returns JSON| HTTP
@@ -145,7 +145,7 @@ graph TB
     style UI fill:#1a1a1a,color:#fff,stroke:#444
     style LOGIC fill:#1a1a1a,color:#fff,stroke:#444
     style HTTP fill:#1a1a1a,color:#fff,stroke:#444
-    style SOAP fill:#1a1a1a,color:#fff,stroke:#444
+    style CORE fill:#1a1a1a,color:#fff,stroke:#444
     style API fill:#1565c0,color:#fff,stroke:#0c3c88,stroke-width:2px
     style SOAP fill:#2d5016,color:#fff,stroke:#1a3a1a,stroke-width:2px
     style OUTPUT fill:#2c2c2c,color:#fff,stroke:#666,stroke-width:2px
