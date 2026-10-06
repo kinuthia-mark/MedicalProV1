@@ -1,64 +1,125 @@
 extends Control
+## Medical-Pro: turns a doctor-patient transcript into a SOAP note.
+##
+## This script wires the UI together. Building the request and reading the
+## response live in soap_logic.gd so they can be tested without a window.
 
-# UI Node References
-@onready var input_field = $VBoxContainer/TranscriptInput
-@onready var output_field = $VBoxContainer/OutputDisplay
-@onready var http_request = $HTTPRequest
+const Soap := preload("res://soap_logic.gd")
 
-# --- API CONFIGURATION ---
-# Replace this with the key you just got from AI Studio
-var api_key = "AIzaSyACo_D-_Hl2daYnLU_rgwQ1K8psg9CI5c8" 
-var api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=" + api_key
+var _api_key := ""
 
-func _ready():
-	# Connect signals
-	$VBoxContainer/GenerateButton.pressed.connect(_on_generate_pressed)
+@onready var input_field: TextEdit = %TranscriptInput
+@onready var output_field: TextEdit = %OutputDisplay
+@onready var generate_button: Button = %GenerateButton
+@onready var example_button: Button = %ExampleButton
+@onready var clear_button: Button = %ClearButton
+@onready var copy_button: Button = %CopyButton
+@onready var save_button: Button = %SaveButton
+@onready var status_label: Label = %StatusLabel
+@onready var save_dialog: FileDialog = %SaveDialog
+@onready var http_request: HTTPRequest = %HTTPRequest
+
+
+func _ready() -> void:
+	generate_button.pressed.connect(_on_generate_pressed)
+	example_button.pressed.connect(func(): input_field.text = Soap.EXAMPLE_TRANSCRIPT)
+	clear_button.pressed.connect(_on_clear_pressed)
+	copy_button.pressed.connect(_on_copy_pressed)
+	save_button.pressed.connect(func(): save_dialog.popup_centered())
+	save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	save_dialog.current_file = "soap-note.txt"
+	save_dialog.file_selected.connect(_on_save_path_chosen)
 	http_request.request_completed.connect(_on_request_completed)
-	output_field.text = "System Ready (Gemini Engine). Enter transcript below."
+	http_request.timeout = Soap.REQUEST_TIMEOUT_SECONDS
 
-func _on_generate_pressed():
-	if input_field.text.strip_edges().is_empty():
-		output_field.text = "Error: Input is empty."
-		return
-	
-	output_field.text = "Engine: Processing Medical Transcript..."
-	
-	# 1. NEW 2026 STABLE ENDPOINT
-	var prod_url = "https://generativelanguage.googleapis.com/v1/models/gemini-3.1-flash-lite:generateContent?key=" + api_key
-	
-	# 2. FORCE-TASK PROMPT (Prevents the "Please provide transcript" response)
-	var system_command = "TASK: Convert transcript to SOAP note. FORMAT: Subjective, Objective, Assessment, Plan. "
-	var force_output = "INSTRUCTION: Do not ask questions. Do not introduce yourself. Generate the note NOW. "
-	var full_prompt = system_command + force_output + "\n\nTRANSCRIPT: " + input_field.text
-	
-	# 3. UPDATED JSON STRUCTURE
-	var body = JSON.stringify({
-		"contents": [{
-			"parts": [{
-				"text": full_prompt
-			}]
-		}],
-		"generationConfig": {
-			"temperature": 0.1, # Lower temperature = more professional/less chatty
-			"maxOutputTokens": 1000
-		}
-	})
-	
-	var headers = ["Content-Type: application/json"]
-	http_request.request(prod_url, headers, HTTPClient.METHOD_POST, body)
-
-func _on_request_completed(_result, response_code, _headers, body):
-	var response_string = body.get_string_from_utf8()
-	var json = JSON.new()
-	var parse_err = json.parse(response_string)
-	
-	if response_code == 200 and parse_err == OK:
-		var data = json.get_data()
-		# Gemini's response path: candidates -> content -> parts -> text
-		if data.has("candidates") and data["candidates"].size() > 0:
-			var content = data["candidates"][0]["content"]["parts"][0]["text"]
-			output_field.text = content.strip_edges()
-		else:
-			output_field.text = "Error: Gemini returned an empty response."
+	_api_key = Soap.load_api_key(OS.get_environment(Soap.KEY_ENV_VAR))
+	if _api_key.is_empty():
+		output_field.text = (
+			"No API key found.\n\nSet the %s environment variable, or save your key in:\n%s"
+			% [Soap.KEY_ENV_VAR, ProjectSettings.globalize_path(Soap.KEY_FILE)]
+		)
+		generate_button.disabled = true
+		_set_status("No API key")
 	else:
-		output_field.text = "API Error (" + str(response_code) + "): " + response_string
+		output_field.placeholder_text = "The SOAP note will appear here."
+		_set_status("Ready")
+
+
+func _set_status(text: String) -> void:
+	status_label.text = text
+
+
+## Copy and Save only make sense once there is a real note.
+func _set_note(text: String, is_note: bool) -> void:
+	output_field.text = text
+	copy_button.disabled = not is_note
+	save_button.disabled = not is_note
+
+
+func _on_clear_pressed() -> void:
+	input_field.text = ""
+	_set_note("", false)
+	_set_status("Ready" if not _api_key.is_empty() else "No API key")
+
+
+func _on_generate_pressed() -> void:
+	var transcript := input_field.text.strip_edges()
+	if transcript.is_empty():
+		_set_note("Paste a transcript first, or press Load example.", false)
+		return
+
+	var err := http_request.request(
+		Soap.request_url(),
+		Soap.request_headers(_api_key),
+		HTTPClient.METHOD_POST,
+		Soap.request_body(transcript)
+	)
+	if err != OK:
+		_set_note("Error: could not send the request (code %d)." % err, false)
+		return
+
+	# Stop double submissions while a request is in flight.
+	generate_button.disabled = true
+	_set_note("", false)
+	_set_status("Generating...")
+
+
+func _on_request_completed(
+	result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray
+) -> void:
+	generate_button.disabled = false
+
+	if result != HTTPRequest.RESULT_SUCCESS:
+		_set_note(Soap.network_error_message(result), false)
+		_set_status("Failed")
+		return
+
+	var data = JSON.parse_string(body.get_string_from_utf8())
+	if response_code != 200:
+		_set_note(Soap.api_error_message(response_code, data), false)
+		_set_status("Failed")
+		return
+
+	var note := Soap.extract_text(data)
+	if note.is_empty():
+		_set_note("Gemini returned an empty response. Try a longer transcript.", false)
+		_set_status("Empty response")
+	else:
+		_set_note(note, true)
+		_set_status("Note ready")
+
+
+func _on_copy_pressed() -> void:
+	DisplayServer.clipboard_set(output_field.text)
+	_set_status("Copied to clipboard")
+
+
+func _on_save_path_chosen(path: String) -> void:
+	path = Soap.with_note_extension(path)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		_set_status("Could not save (error %d)" % FileAccess.get_open_error())
+		return
+	file.store_string(output_field.text + "\n")
+	file.close()
+	_set_status("Saved to " + path.get_file())

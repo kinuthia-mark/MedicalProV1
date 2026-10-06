@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.6.3-stable
+
+jobs:
+  gdscript:
+    name: GDScript lint and Godot import check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: gdlint and gdformat
+        run: |
+          pip install "gdtoolkit==4.*"
+          gdlint medical-pro/
+          gdformat --check medical-pro/
+
+      - name: Download Godot (headless)
+        run: |
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+
+      # Importing the project parses every script and scene. Godot keeps going
+      # after a script error, so the log is checked for errors as well.
+      - name: Import project
+        run: |
+          ./godot --headless --path medical-pro --import 2>&1 | tee import.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|ERROR:" import.log; then
+            echo "::error::Godot reported errors while importing the project"
+            exit 1
+          fi
+
+      - name: Unit tests (headless)
+        run: ./godot --headless --path medical-pro --script res://tests/run_tests.gd
+
+      # A real renderer is needed for a screenshot, so run under a virtual
+      # display with Mesa's software OpenGL.
+      - name: Render a screenshot of the app
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
+          xvfb-run -s "-screen 0 1280x760x24" ./godot --path medical-pro --rendering-driver opengl3 \
+            --resolution 1280x760 --script res://tools/capture.gd -- "$PWD/app.png"
+          test -s app.png
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshot
+          path: app.png
