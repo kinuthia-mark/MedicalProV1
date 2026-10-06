@@ -17,6 +17,8 @@ func _init() -> void:
 	_test_error_messages()
 	_test_api_key_loading()
 	_test_note_extension()
+	_test_templates()
+	_test_missing_sections()
 	print("\n%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -99,3 +101,33 @@ func _test_note_extension() -> void:
 	check(Soap.with_note_extension("/tmp/note") == "/tmp/note.txt", "adds .txt")
 	check(Soap.with_note_extension("/tmp/note.md") == "/tmp/note.md", "keeps .md")
 	check(Soap.with_note_extension("/tmp/note.TXT") == "/tmp/note.TXT", "keeps .TXT")
+
+
+func _test_templates() -> void:
+	print("templates")
+	var general := Soap.build_prompt("Doctor: Hi")
+	check(not general.contains("FOCUS:"), "General adds no extra guidance")
+	check(general.ends_with("TRANSCRIPT:\nDoctor: Hi"), "transcript still ends the prompt")
+	var paeds := Soap.build_prompt("Doctor: Hi", "Paediatrics")
+	check(paeds.contains("The patient is a child"), "Paediatrics guidance is included")
+	check(Soap.build_prompt("x", "Mental health").contains("safety plan"), "Mental health guidance")
+	check(Soap.build_prompt("x", "Follow-up visit").contains("adherence"), "Follow-up guidance")
+	check(Soap.build_prompt("x", "Unknown") == Soap.build_prompt("x"), "unknown template = General")
+	check(Soap.TEMPLATES.has("General"), "General template exists")
+
+
+func _test_missing_sections() -> void:
+	print("missing sections")
+	var full := "SUBJECTIVE:\ncough\nOBJECTIVE:\nclear\nASSESSMENT:\nviral\nPLAN:\nrest"
+	check(Soap.missing_sections(full).is_empty(), "complete note")
+	var markdown := "**Subjective**\na\n## Objective\nb\n- Assessment: c\n> Plan\nd"
+	check(Soap.missing_sections(markdown).is_empty(), "Markdown headings and any case count")
+	var partial := "SUBJECTIVE: cough\nPLAN: rest"
+	check(
+		Soap.missing_sections(partial) == PackedStringArray(["OBJECTIVE", "ASSESSMENT"]),
+		"reports the missing headings in order"
+	)
+	check(
+		Soap.missing_sections("The subjective part of this is unclear").size() == 4,
+		"a word mid-sentence is not a heading"
+	)
