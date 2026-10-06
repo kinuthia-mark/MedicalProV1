@@ -19,14 +19,41 @@ const TEMPERATURE := 0.1
 const MAX_OUTPUT_TOKENS := 1000
 const REQUEST_TIMEOUT_SECONDS := 60.0
 
+# The first %s is the template's extra guidance, the second the transcript.
 const PROMPT := (
 	"TASK: Convert the transcript below into a SOAP note.\n"
 	+ "FORMAT: Use the headings SUBJECTIVE, OBJECTIVE, ASSESSMENT and PLAN.\n"
 	+ "RULES: Only use information that is in the transcript. "
 	+ "If something was not discussed, write 'Not documented'. "
-	+ "Do not ask questions and do not introduce yourself.\n\n"
+	+ "Do not ask questions and do not introduce yourself.\n"
+	+ "%s\n"
 	+ "TRANSCRIPT:\n%s"
 )
+
+# Note templates. Each adds guidance for what that kind of visit needs.
+const TEMPLATES := {
+	"General": "",
+	"Paediatrics":
+	(
+		"FOCUS: The patient is a child. Record age, weight and who gave the history "
+		+ "(parent or carer). Note feeding, growth and immunisation status if discussed. "
+		+ "Express any doses per kg if the clinician stated them."
+	),
+	"Mental health":
+	(
+		"FOCUS: Record mood, sleep, appetite and any risk to self or others in SUBJECTIVE. "
+		+ "Put a brief mental state examination in OBJECTIVE. "
+		+ "If risk was discussed, state the risk level and the safety plan in PLAN."
+	),
+	"Follow-up visit":
+	(
+		"FOCUS: This is a follow-up. Start SUBJECTIVE with the change since the last "
+		+ "visit, record adherence to the previous plan, and say in ASSESSMENT whether "
+		+ "the condition is improving, stable or worse."
+	),
+}
+
+const SECTIONS := ["SUBJECTIVE", "OBJECTIVE", "ASSESSMENT", "PLAN"]
 
 const EXAMPLE_TRANSCRIPT := (
 	"Doctor: What brings you in today?\n"
@@ -60,9 +87,14 @@ static func request_headers(api_key: String) -> PackedStringArray:
 	return PackedStringArray(["Content-Type: application/json", "x-goog-api-key: " + api_key])
 
 
-static func request_body(transcript: String) -> String:
+static func build_prompt(transcript: String, template: String = "General") -> String:
+	var guidance: String = TEMPLATES.get(template, "")
+	return PROMPT % [guidance, transcript]
+
+
+static func request_body(transcript: String, template: String = "General") -> String:
 	var payload := {
-		"contents": [{"parts": [{"text": PROMPT % transcript}]}],
+		"contents": [{"parts": [{"text": build_prompt(transcript, template)}]}],
 		"generationConfig": {"temperature": TEMPERATURE, "maxOutputTokens": MAX_OUTPUT_TOKENS},
 	}
 	return JSON.stringify(payload)
@@ -118,3 +150,14 @@ static func network_error_message(result: int) -> String:
 static func with_note_extension(path: String) -> String:
 	var ext := path.get_extension().to_lower()
 	return path if ext in ["txt", "md"] else path + ".txt"
+
+
+## SOAP headings that are missing from a note. A heading counts if it starts
+## a line, ignoring Markdown marks such as "**" or "#", and in any letter case.
+static func missing_sections(note: String) -> PackedStringArray:
+	var missing := PackedStringArray()
+	for section in SECTIONS:
+		var pattern := RegEx.create_from_string("(?im)^[\\s#*_>-]*%s\\b" % section)
+		if pattern.search(note) == null:
+			missing.append(section)
+	return missing

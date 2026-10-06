@@ -76,10 +76,11 @@ Open the `medical-pro/` folder in Godot 4.6 or newer and press **Run** (F5). Pas
 |---|---|
 | **Load example** | Fills in a short sample consultation so you can try the app straight away |
 | **Clear** | Empties both boxes |
+| **Template picker** | General, Paediatrics, Mental health or Follow-up visit. Each adds guidance to the prompt, for example weight-based doses for children or a risk assessment and safety plan for mental health |
 | **Generate SOAP Note** | Sends the transcript to Gemini. The button is disabled until the answer arrives, so a note cannot be requested twice |
 | **Copy** | Puts the note on the clipboard, ready to paste into an EHR |
 | **Save...** | Saves the note as a `.txt` or `.md` file |
-| Status (top right) | Ready, Generating..., Note ready, Copied, Saved, or what went wrong |
+| Status (top right) | Ready, Generating..., Note ready, Copied, Saved, or what went wrong. If the note is missing any of the four SOAP headings it says **Check note: missing ...** so an incomplete note is never copied unnoticed |
 
 Copy and Save stay disabled until there is a real note, so an error message can never be saved as if it were a note.
 
@@ -230,7 +231,7 @@ MedicalProV1/
 │   ├── medical_pro.gd           # UI wiring: buttons, status, copy and save
 │   ├── soap_logic.gd            # Testable logic: key loading, request, parsing, error messages
 │   ├── src/control.tscn         # The UI: two panels, theme, buttons, save dialog
-│   ├── tests/run_tests.gd       # 30 headless unit tests for soap_logic.gd
+│   ├── tests/run_tests.gd       # 41 headless unit tests for soap_logic.gd
 │   ├── tools/capture.gd         # Renders the README screenshot
 │   └── icon.svg
 ├── docs/screenshots/app.png     # Screenshot rendered by CI
@@ -275,7 +276,7 @@ GitHub Actions runs on every push and pull request:
 
 - `gdlint` and `gdformat --check` from [gdtoolkit](https://github.com/Scony/godot-gdscript-toolkit)
 - a headless Godot 4.6 import of the project, which fails if any script or scene has an error
-- **30 unit tests** (`tests/run_tests.gd`) for request building, response parsing, error messages, API key loading and save paths. They check, for example, that the key is sent in a header and never appears in the URL, and that a malformed or empty Gemini response returns an empty note instead of crashing
+- **41 unit tests** (`tests/run_tests.gd`) for request building, the note templates, the missing-section check, response parsing, error messages, API key loading and save paths. They check, for example, that the key is sent in a header and never appears in the URL, and that a malformed or empty Gemini response returns an empty note instead of crashing
 - a screenshot render: the app is started under a virtual display with software OpenGL, filled with the example, and saved as a PNG artifact
 
 To run the unit tests locally:

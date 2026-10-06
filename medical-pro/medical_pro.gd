@@ -15,6 +15,7 @@ var _api_key := ""
 @onready var clear_button: Button = %ClearButton
 @onready var copy_button: Button = %CopyButton
 @onready var save_button: Button = %SaveButton
+@onready var template_picker: OptionButton = %TemplatePicker
 @onready var status_label: Label = %StatusLabel
 @onready var save_dialog: FileDialog = %SaveDialog
 @onready var http_request: HTTPRequest = %HTTPRequest
@@ -30,6 +31,8 @@ func _ready() -> void:
 	save_dialog.current_file = "soap-note.txt"
 	save_dialog.file_selected.connect(_on_save_path_chosen)
 	http_request.request_completed.connect(_on_request_completed)
+	for template_name in Soap.TEMPLATES:
+		template_picker.add_item(template_name)
 	http_request.timeout = Soap.REQUEST_TIMEOUT_SECONDS
 
 	_api_key = Soap.load_api_key(OS.get_environment(Soap.KEY_ENV_VAR))
@@ -72,7 +75,7 @@ func _on_generate_pressed() -> void:
 		Soap.request_url(),
 		Soap.request_headers(_api_key),
 		HTTPClient.METHOD_POST,
-		Soap.request_body(transcript)
+		Soap.request_body(transcript, _selected_template())
 	)
 	if err != OK:
 		_set_note("Error: could not send the request (code %d)." % err, false)
@@ -106,7 +109,12 @@ func _on_request_completed(
 		_set_status("Empty response")
 	else:
 		_set_note(note, true)
-		_set_status("Note ready")
+		# Flag an incomplete note so it is never copied without being checked.
+		var missing := Soap.missing_sections(note)
+		if missing.is_empty():
+			_set_status("Note ready")
+		else:
+			_set_status("Check note: missing " + ", ".join(missing))
 
 
 func _on_copy_pressed() -> void:
@@ -123,3 +131,7 @@ func _on_save_path_chosen(path: String) -> void:
 	file.store_string(output_field.text + "\n")
 	file.close()
 	_set_status("Saved to " + path.get_file())
+
+
+func _selected_template() -> String:
+	return template_picker.get_item_text(template_picker.selected)
